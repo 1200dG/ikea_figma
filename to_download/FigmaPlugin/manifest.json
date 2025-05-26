@@ -1,8 +1,0 @@
-{
-  "name": "Ikea Figma",
-  "id": "Ikea Figma",
-  "main": "code.ts",
-  "ui": "ui.html",
-  "editorType": ["figma"],
-  "api": "1.0.0"
-}
