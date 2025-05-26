@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ikea Figma</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #0058a3;
+    }
+
+    .loader {
+      border: 6px solid #eee;
+      border-top: 6px solid #0058a3;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #status {
+      font-size: 16px;
+      text-align: center;
+      max-width: 300px;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>🛠️ IKEA Figma</h1>
+  <div class="loader" id="loader"></div>
+  <p id="status">🔄 Loading and applying image map...</p>
+
+  <script>
+    const IMAGE_MAP_URL = "https://raw.githubusercontent.com/1200dG/ikea_figma/main/image_map.json";
+
+    async function fetchAndSend() {
+      const status = document.getElementById("status");
+      const loader = document.getElementById("loader");
+      const items = [];
+
+      try {
+        const res = await fetch(IMAGE_MAP_URL);
+        const text = await res.text();
+        const imageMap = JSON.parse(text);
+
+        for (const [nodeId, url] of Object.entries(imageMap)) {
+          try {
+            const imgRes = await fetch(url);
+            if (!imgRes.ok) throw new Error(`Image fetch failed: ${imgRes.status}`);
+            const buf = await imgRes.arrayBuffer();
+
+            items.push({
+              nodeId,
+              bytes: Array.from(new Uint8Array(buf))
+            });
+
+            console.log(`✅ Loaded image for node ${nodeId}`);
+          } catch (imgErr) {
+            console.error(`❌ Failed to fetch image for node ${nodeId}:`, imgErr);
+          }
+        }
+
+        parent.postMessage({ pluginMessage: { type: "batch-image-upload", items } }, "*");
+        loader.style.display = "none";
+        status.className = "success";
+        status.innerText = "✅ All images sent to Figma!";
+      } catch (err) {
+        console.error("❌ Error fetching or parsing image_map.json:", err);
+        loader.style.display = "none";
+        status.className = "error";
+        status.innerText = `❌ Error: ${err.message}`;
+      }
+    }
+
+    fetchAndSend();
+  </script>
+</body>
+</html>
